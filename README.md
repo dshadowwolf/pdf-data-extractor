@@ -1,9 +1,16 @@
 Extract black&white images from a PDF:
-# mkdir temp && podofoimgextract <your PDF> temp
-Deskew them:
-# python deskew_with_alyn.py
-Crop them to size and mark for the grid:
--- no code yet, ImageProcess.py is just a module at this time
+\# mkdir temp && podofoimgextract <your PDF> temp
+
+Deskewing, cropping and other image processing is a work in progress. Use of
+"alyn" has been stopped to try and limit the amount of support libraries that
+are needed (alyn using scikit-image for its "Hough Lines" transform, OpenCV
+also provides one and that can be used instead - see "Deskew" in
+ImageProcess.py).
+
+More... only one or two support libraries will truly be needed if the code is shifted
+to C++ - OpenCV and a generic image library for handling the cropping and
+rotation needed for the deskew. (Okay, okay, so we could turn the "skew angle"
+into an Affine Matrix and use the OpenCV "warpAffine" methods, but...)
 
 TODO: 
 A) Test cases for de-skewing and cropping checks. 
