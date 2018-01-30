@@ -1,5 +1,7 @@
 Extract black&white images from a PDF:
+```
 \# mkdir temp && podofoimgextract <your PDF> temp
+```
 
 Deskewing, cropping and other image processing is a work in progress. Use of
 "alyn" has been stopped to try and limit the amount of support libraries that
