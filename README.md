@@ -1,7 +1,9 @@
-Extract black&white images from a PDF, deskew them and crop them to size. Current size works for the known and
-provided "OH-3" that came in as a proof-of-concept test. The deskewing is not 100% but seems to get within 1% of pure
-vertical. (This makes a lot of sense as the deskew appears to work on horizontal checking and the horizontal lines
-seem to be level)
+Extract black&white images from a PDF:
+# mkdir temp && podofoimgextract <your PDF> temp
+Deskew them:
+# python deskew_with_alyn.py
+Crop them to size and mark for the grid:
+# python edge_detect.py
 
 TODO: 
 A) Test cases for de-skewing and cropping checks. 
