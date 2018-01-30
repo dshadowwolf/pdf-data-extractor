@@ -6,42 +6,40 @@ import math
 import glob
 import os
 import imutils
+import os
 
-class ImageProcess:
-        def __init__(self, indir, outdir, fnpattern):
-                self.indir = indir
-                self.outdir = outdir
-                self.pattern = fnpattern
-                self.filelist = makeGlob(self.indir, self.pattern)
+class utils:
+        def ensure_dir_exists(file_path):
+                directory = path.dirname('%s/%s' % (os.getcwd(), file_path))
+                if not os.path.exists(directory):
+                        os.makedirs(directory)
 
-        def setInputDirectory(self, dirname):
-                self.indir = dirname
-                self.filelist = makeGlob(self, self.indir, self.pattern)
+        def grayscaleAndEdges(image):
+                gr = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                ed = cv2.Canny( gr, 50, 150, apertureSize=3 )
+                return gr, ed
+
+        def doHoughLinesP(image, rho=0.125, theta=np.pi/180, maxLineGap=20, threshold=5, minLineLength):
+                grayscale, edges = grayscaleAndEdges(image)
+                return cv2.HoughLinesP(image=edges, rho=rho, theta=theta, threshold=threshold, 
+                                        lines=np.array([]), minLineLength=minLineLength, maxLineGap=maxLineGap)
+
+        def doLineSegments(image):
+                gr, edges = grayscaleAndEdges(image)
+                lsd = cv2.createLineSegmentDetector(_refine = cv2.LSD_REFINE_ADV )
+                return lsd.detect( edges )
+
+class CropDeskewedImage:
+        def __init__(self, filename, outdir):
+                self.inputFile = filename
+                self.__image = Image.open(filename)
+                self.outputName = "%/cropped_%s" % (outdir, os.path.basename(filename))
+
+        def getBounds(self):
+                img = cv2.imread(self.inputFile)
+                lines = utils.doHoughLinesP( image=img, minLineLength=img.shape[1]-600 )
+                return lines, img.shape[1], img.shape[0]
                 
-        def setOutputDirectory(self, dirname):
-                self.outdir = outdir
-        
-        def makeGlob(self, dirname, glob_pattern):
-                self.filelist = glob.glob( "%s/%s" % (dirname,glob_pattern) )
-
-        def loadImageCV(self, filename):
-                return cv2.imread(filename)
-                
-        def loadImagePIL(self, filename):
-                return Image.open(filename)
-
-        def makeGrayscale(self, image):
-                return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        def edgeDetect(self, image):
-                return cv2.Canny(image, 50, 150, apertureSize=3)
-
-        def prepCVImage(self, filename):
-                img = loadImageCV(self,filename)
-                gray = makeGrayscale(self,img)
-                edges = edgeDetect(self,img)
-                return img, gray, edges
-
         def findMaximaAndMinima(self, lines, imgXMax, imgYMax):
                 points = [imgXMax, imgYMax, 0, 0]
                 for _line in lines:
@@ -65,13 +63,46 @@ class ImageProcess:
                 points[3] -= 2
                 return points
 
-        def cropImage(self, filename):
-                img, gray, edges = prepCVImage(self, filename)
-                lines = cv2.HoughLinesP(image=edges, rho=0.125, theta=np.pi/180, threshold=5, 
-                                        lines=np.array([]), minLineLength=img.shape[1]-600, maxLineGap=20)
-                points = findMaximaAndMinima( self, lines, img.shape[1], img.shape[0] )
-                toCrop = loadImagePIL( self, filename )
-                toCrop.crop( (points[0], points[1], points[2], points[3]) ).save( filename )
+        def cropImage(self):
+                lines, maxX, maxY = self.getBounds()
+                trueBounds = self.findMinimaAndMaxima(lines, maxX, maxY)
+                self.__image.crop( (trueBounds[0], trueBounds[1], trueBounds[2], trueBounds[3]) )
+                
+        def process(self):
+                self.cropImage()
+                self.__image.save( self.outputName )
+
+class GridBounds:
+        def __init__(self, indir, outdir, fnpattern):
+                self.indir = indir
+                self.outdir = outdir
+                self.pattern = fnpattern
+                self.filelist = makeGlob(self.indir, self.pattern)
+
+        def setInputDirectory(self, dirname):
+                self.indir = dirname
+                self.filelist = makeGlob(self, self.indir, self.pattern)
+                
+        def setOutputDirectory(self, dirname):
+                self.outdir = outdir
+        
+        def makeGlob(self, dirname, glob_pattern):
+                self.filelist = glob.glob( "%s/%s" % (dirname,glob_pattern) )
+
+        def loadImageCV(self, filename):
+                return cv2.imread(filename)
+                
+        def makeGrayscale(self, image):
+                return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        def edgeDetect(self, image):
+                return cv2.Canny(image, 50, 150, apertureSize=3)
+
+        def prepCVImage(self, filename):
+                img = loadImageCV(self,filename)
+                gray = makeGrayscale(self,img)
+                edges = edgeDetect(self,img)
+                return img, gray, edges
                 
         def max3( itemA, itemB, itemC ):
                 return int( math.floor( max( max( itemA, itemB ), itemC ) ) )
@@ -80,9 +111,7 @@ class ImageProcess:
                 return int( math.floor( min( min( itemA, itemB), itemC ) ) )
 
         def findCornerPoints(self, filename):
-                img, gray, edges = prepCVImage(self, filename)
-                lsd = cv2.createLineSegmentDetector(_refine = cv2.LSD_REFINE_ADV )
-                lines,width,prec,nfa = lsd.detect( edges2 )
+                lines, width, prec, nfa = utils.doLineSegments( cv2.imread( filename ) )
                 
                 # prep for finding the forms outermost corners
                 a,b,c = lines.shape
@@ -118,8 +147,6 @@ class ImageProcess:
         def run(self):
                 for filename in self.filelist:
                         output = "%s/%s" % (self.outdir, os.path.basename(filename))
-                        print "working on %s, output at %s" % (filename, output)
-                        self.cropImage(filename)
                         cv2.imwrite( output, self.drawBorderLines(filename) )
 
 class Deskew:
@@ -130,11 +157,13 @@ class Deskew:
                 self.files = self.makeGlob()
                 self.curImage = None
                 self.curFile = None
-
+                self.baseFilename = None
+                
         def loadImage(self, filename):
                 print "Loading ", filename
                 self.curImage = cv2.imread(filename)
                 self.curFile = filename
+                self.baseFilename = os.path.basename(filename)
 
         def deskew(self):
                 if self.curImage is None:
@@ -167,16 +196,16 @@ class Deskew:
         def makeGlob(self):
                 return glob.glob( "%s/%s" % (self.inputdir, self.glob) )
 
+        def writeOutput(self, image):
+                outname = "%s/deskewed_%s" % (self.outputdir, self.baseFilename)
+                ensure_dir_exists(outname)
+                cv2.imwrite(outname, image) 
+                
         def run(self):
                 self.files = self.makeGlob()
                 for file_ in files:
                         im = self.doSingle(file_)
-                        out = ...
-                        cv2.imwrite( out, im )
+                        self.writeOutput(im)
 
-d = Deskew( "temp", "out", "pdfimage_????.jpg" )
-d.doSingle()
-
-# use:
-# worker = ImageProcess( indir = <input directory>, outdir = <output directory>, fnpattern = <glob pattern> )
-# worker.run()
+if __name__ == "__MAIN__":
+        print "I do nothing right now standalone"
