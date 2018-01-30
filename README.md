@@ -3,7 +3,7 @@ Extract black&white images from a PDF:
 Deskew them:
 # python deskew_with_alyn.py
 Crop them to size and mark for the grid:
-# python edge_detect.py
+-- no code yet, ImageProcess.py is just a module at this time
 
 TODO: 
 A) Test cases for de-skewing and cropping checks. 
