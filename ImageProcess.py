@@ -4,6 +4,8 @@ import cv2
 from PIL import Image
 import math
 import glob
+import os
+import imutils
 
 class ImageProcess:
         def __init__(self, indir, outdir, fnpattern):
@@ -120,6 +122,60 @@ class ImageProcess:
                         self.cropImage(filename)
                         cv2.imwrite( output, self.drawBorderLines(filename) )
 
+class Deskew:
+        def __init__(self, indir, outdir, fileglob):
+                self.inputdir = indir
+                self.outputdir = outdir
+                self.glob = fileglob
+                self.files = self.makeGlob()
+                self.curImage = None
+                self.curFile = None
+
+        def loadImage(self, filename):
+                print "Loading ", filename
+                self.curImage = cv2.imread(filename)
+                self.curFile = filename
+
+        def deskew(self):
+                if self.curImage is None:
+                        if self.curFile is not None:
+                                self.loadImage(self.curFile)
+                        else:
+                                print "Image not found or loaded !"
+                                return None
+                                
+                gray = cv2.cvtColor(self.curImage, cv2.COLOR_BGR2GRAY)
+                edges = cv2.Canny( gray, 50, 150, apertureSize=3)
+                lines = cv2.HoughLinesP( image=edges, lines=np.array([]), rho=0.02, theta=np.pi/360, threshold=1, minLineLength=gray.shape[1]/4, maxLineGap=10 )
+                angle = 0.0;
+                if lines is None:
+                        print "Bad data? HoughLinesP returned data is empty!"
+                        return None
+                numLines = lines.shape[0]
+                for i in xrange(numLines):
+                        angle += math.atan2( lines[i][0][3] - lines[i][0][1],
+                                             lines[i][0][2] - lines[i][0][0] )
+                angle /= numLines
+                sk_angle = (angle *180)/np.pi
+                rotated = imutils.rotate(self.curImage, sk_angle)
+                return rotated                
+        
+        def doSingle(self, filename):
+                self.loadImage(filename)
+                return self.deskew()
+
+        def makeGlob(self):
+                return glob.glob( "%s/%s" % (self.inputdir, self.glob) )
+
+        def run(self):
+                self.files = self.makeGlob()
+                for file_ in files:
+                        im = self.doSingle(file_)
+                        out = ...
+                        cv2.imwrite( out, im )
+
+d = Deskew( "temp", "out", "pdfimage_????.jpg" )
+d.doSingle()
 
 # use:
 # worker = ImageProcess( indir = <input directory>, outdir = <output directory>, fnpattern = <glob pattern> )
