@@ -5,10 +5,11 @@ from PIL import Image
 import math
 import glob
 import os
-import imutils
-import os
 
 class utils:
+        def __init__(self):
+                self.__windows = []
+
         def ensure_dir_exists(self, file_path):
                 directory = os.path.dirname('%s/%s' % (os.getcwd(), file_path))
                 if not os.path.exists(directory):
@@ -35,182 +36,64 @@ class utils:
         def min3( self, itemA, itemB, itemC ):
                 return int( math.floor( min( min( itemA, itemB), itemC ) ) )
 
-        def findMaximaAndMinima(self, lines, imgXMax, imgYMax):
-                points = [imgXMax, imgYMax, 0, 0]
-                for _line in lines:
-                        for segment in _line:
-                                dir_x = segment[2] - segment[0]
-                                dir_y = segment[3] - segment[1]
-                                if dir_x < dir_y:
-                                        if dir_x < 0:
-                                                dir_x = segment[0] - segment[2]
-                                else:
-                                        if dir_y < 0:
-                                                dir_y = segment[1] - segment[3]
-                                
-                                points[0] = min( points[0], imgXMax - dir_x )
-                                points[1] = min( points[1], dir_y )
-                                points[2] = max( points[2], dir_x )
-                                points[3] = max( points[3], imgYMax - dir_y )
-                points[0] += 2
-                points[1] += 2
-                points[2] -= 2
-                points[3] -= 2
-                return points
-class CropDeskewedImage:
-        def __init__(self, filename, outdir):
-                self.inputFile = filename
-                self.__image = Image.open(filename)
-                self.outputName = "%s/cropped_%s" % (outdir, os.path.basename(filename))
-
-        def getBounds(self):
-                img = cv2.imread(self.inputFile)
-                lines = utils().doHoughLinesP( image=img, minLineLength=img.shape[1]-600 )
-                return lines, img.shape[1], img.shape[0]
-
-        def cropImage(self):
-                lines, maxX, maxY = self.getBounds()
-                trueBounds = utils().findMaximaAndMinima(lines, maxX, maxY)
-                print trueBounds
-                self.__image.crop( (trueBounds[0], trueBounds[1], trueBounds[2], trueBounds[3]) )
-                
-        def process(self):
-                self.cropImage()
-                self.__image.save( self.outputName )
-
-class GridBounds:
-        def __init__(self, indir, outdir, fnpattern):
-                self.indir = indir
-                self.outdir = outdir
-                self.pattern = fnpattern
-                self.filelist = self.makeGlob(self.indir, self.pattern)
-
-        def setInputDirectory(self, dirname):
-                self.indir = dirname
-                self.filelist = self.makeGlob( self.indir, self.pattern)
-                
-        def setOutputDirectory(self, dirname):
-                self.outdir = outdir
-        
-        def makeGlob(self, dirname, glob_pattern):
-                return glob.glob( "%s/%s" % (dirname,glob_pattern) )
-
-        def loadImageCV(self, filename):
-                return cv2.imread(filename)
-                
-        def makeGrayscale(self, image):
-                return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        def edgeDetect(self, image):
-                return cv2.Canny(image, 50, 150, apertureSize=3)
-
-        def prepCVImage(self, filename):
-                img = loadImageCV(self,filename)
-                gray = makeGrayscale(self,img)
-                edges = edgeDetect(self,img)
-                return img, gray, edges
-                
-        def findCornerPoints(self, filename):
-                img = cv2.imread(filename)
-                lines, width, prec, nfa = utils().doLineSegments( img )
-                # prep for finding the forms outermost corners
-                a,b,c = lines.shape
-                points = [ img.shape[1], img.shape[0], 0, 0 ]
-                
-                for i in xrange(a):
-                        for line_ in lines[i]:
-                                util = utils()
-                                points[0] = util.min3( points[0], line_[0], line_[2] )
-                                points[1] = util.min3( points[1], line_[1], line_[3] )
-                                points[2] = util.max3( points[2], line_[0], line_[2] )
-                                points[3] = util.max3( points[3], line_[1], line_[3] )
-                               
-                # give a bit of extra room
-                # expand out by 2 pixels top and bottom to give some extra room for stuff that might
-                # be on the edge of the document
-                points[0] -= 2
-                points[1] -= 2
-                points[2] += 2
-                points[3] += 2
-                if points[0] < 0:
-                        points[0] = 0
-                if points[1] < 0:
-                        points[1] = 0
-
-                return points
-
-        def drawBorderLines(self, filename):
-                points = findCornerPoints(self, filename)
-                img = loadImageCV(self, filename)
-                lines = [ [ (points[0], points[1]), (points[0], points[3]) ], 
-                          [ (points[0], points[3]), (points[2], points[3]) ],
-                          [ (points[2], points[3]), (points[2], points[1]) ],
-                          [ (points[2], points[1]), (points[0], points[1]) ] ]
-                for line in lines:
-                        cv2.line( img, line[0], line[1], (0,0,255), cv2.LINE_AA )
-                return img
-
-        def getBounds(self, fn):
-                img = cv2.imread(fn)
-                lines = utils().doHoughLinesP( image=img, minLineLength=img.shape[1]/2 )
-                return lines, img.shape[1], img.shape[0]
-
-        def tryCrop(self, filename):
-                img = self.loadImageCV(filename)
-                maxX = img.shape[1]
-                maxY = img.shape[0]
-                lines = utils().doHoughLinesP( image=img, minLineLength=maxX/4 )
-                print lines
-                print lines.shape
-                points = utils().findMaximaAndMinima(lines, maxX, maxY)
-                x_end = points[2]
-                y_end = points[3]
-                x_start = points[0]
-                y_start = points[1]
-                width = x_end - x_start
-                height = y_end -y_start
-                print (points, width, height)
-                print x_start, y_start, x_end, y_end
-                new_image = img[y_start:y_end, x_start:x_end].copy()
-                print img.shape
-                print new_image.shape
-                return new_image
-
-        def doSingle(self):
-                fn = self.filelist[0]
-                img = self.loadImageCV(fn)
-                lines, maxX, maxY = self.getBounds(fn)
-                points = utils().findMaximaAndMinima(lines, maxX, maxY)
-                a,b,c = lines.shape
-                for i in xrange(a):
-                        cv2.line( img, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]),
-                                  (255,255,255), 2, cv2.LINE_AA )
-
-                cv2.line( img, (points[0],points[1]), (points[0], points[3]), (0,0,255), 2, cv2.LINE_AA )
-                cv2.line( img, (points[0],points[3]), (points[2], points[3]), (0,0,255), 2, cv2.LINE_AA )
-                cv2.line( img, (points[2],points[3]), (points[2], points[1]), (0,0,255), 2, cv2.LINE_AA )
-                cv2.line( img, (points[2],points[1]), (points[0], points[1]), (0,0,255), 2, cv2.LINE_AA )
-
-                cv2.imshow("orig", img)
-                
-                img = self.tryCrop(fn)
-                print img.shape
-                if not img.shape[0] > 0 or not img.shape[1] > 0:
-                        print "cropped is bad shape!"
+        def makeWindowAuto(self, windowName):
+                if self.__windows.count(windowName) > 0:
                         return
-                im = self.tryCrop(fn)
-                cv2.imshow(fn, im)
-                cv2.imwrite( "out/test-image.jpg", im )
+                        
+                cv2.namedWindow( windowName, cv2.WINDOW_AUTOSIZE )
+                self.__windows.append( windowName )
+
+        def makeWindowNormal( self, windowName ):
+                if self.__windows.count(windowName) > 0:
+                        return
+                        
+                cv2.namedWindow( windowName, cv2.WINDOW_NORMAL )
+
+        def showImage( self, windowName, image ):
+                if self.__windows.count(windowName) > 0:
+                        return
+                        
+                self.makeWindowNormal(windowName)
+                cv2.imshow(windowName, image)
+                
+        def evLoop(self):
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
 
-        def run(self):
-                for filename in self.filelist:
-                        output = "%s/%s" % (self.outdir, os.path.basename(filename))
-                        cv2.imwrite( output, self.drawBorderLines(filename) )
+class CropImage:
+        def __init__(self, filename, outdir, utils_=None):
+                self.inputFile = filename
+                self.__image = None
+                self.outputName = "%s/cropped_%s" % (outdir, os.path.basename(filename))
+                if utils_ is None:
+                        self.__utils = utils()
+                else:
+                        self.__utils = utils_
+
+        def getBounds(self):
+                img = cv2.imread(self.inputFile)
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                gray = np.float32(gray)
+                dst = cv2.cornerHarris(gray,2,3,0.04)
+                dst = cv2.dilate(dst,None)
+                y,x = np.nonzero( dst > 0.01*dst.max() )
+                corners = [ np.amin(x), np.amin(y), np.amax(x), np.amax(y) ]
+                return corners, img.shape[1], img.shape[0]
+
+        def cropImage(self):
+                corners, maxX, maxY = self.getBounds()
+                img = cv2.imread(self.inputFile)
+                self.__image = img[corners[1]:corners[3], corners[0]:corners[2]]
+
+        def process(self):
+                self.cropImage()
+                cv2.imwrite( self.outputName, self.__image )
+        
+        def getImage(self):
+                return self.__image
 
 class Deskew:
-        def __init__(self, indir, outdir, fileglob):
+        def __init__(self, indir, outdir, fileglob, utils_=None):
                 self.inputdir = indir
                 self.outputdir = outdir
                 self.glob = fileglob
@@ -218,7 +101,9 @@ class Deskew:
                 self.curImage = None
                 self.curFile = None
                 self.baseFilename = None
-                self.__utils = utils()
+                self.__utils = utils_
+                if self.__utils is None:
+                        self.__utils = utils()
 
         def loadImage(self, filename):
                 print "Loading ", filename
@@ -247,7 +132,9 @@ class Deskew:
                                              lines[i][0][2] - lines[i][0][0] )
                 angle /= numLines
                 sk_angle = (angle *180)/np.pi
-                rotated = imutils.rotate(self.curImage, sk_angle)
+                rows,cols,colors = self.curImage.shape
+                affineMatrix = cv2.getRotationMatrix2D( (cols/2, rows/2), sk_angle, 1 )
+                rotated = cv2.warpAffine(self.curImage, affineMatrix, (cols, rows))
                 return rotated                
         
         def doSingle(self, filename):
@@ -270,10 +157,14 @@ class Deskew:
 
 if __name__ == "__main__":
         print "I do nothing right now standalone"
-        d = Deskew( "temp", "out", "pdfimage_????.jpg")
+        u = utils()
+        d = Deskew( "temp", "out", "pdfimage_????.jpg", u)
         im = d.doSingle( "temp/pdfimage_0000.jpg" )
         d.writeOutput( im )
-#        cr = CropDeskewedImage( "out/deskewed_pdfimage_0000.jpg", "out" )
-#        cr.process()
-        gb = GridBounds( "out", "out", "deskewed_pdfimage_????.jpg" )
-        gb.doSingle()
+        cr = CropImage( "out/deskewed_pdfimage_0000.jpg", "out" )
+        cr.process()
+        u.showImage( "orig", cv2.imread("temp/pdfimage_0000.jpg") )
+        u.showImage( "deskewed", im )
+        u.showImage( "cropped", cr.getImage() )
+        u.evLoop()
+
