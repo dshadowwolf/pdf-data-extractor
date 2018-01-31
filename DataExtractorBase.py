@@ -1,7 +1,6 @@
 #!/bin/env python
 import numpy as np
 import cv2
-from PIL import Image
 import math
 import glob
 import os
@@ -157,14 +156,4 @@ class Deskew:
 
 if __name__ == "__main__":
         print "I do nothing right now standalone"
-        u = utils()
-        d = Deskew( "temp", "out", "pdfimage_????.jpg", u)
-        im = d.doSingle( "temp/pdfimage_0000.jpg" )
-        d.writeOutput( im )
-        cr = CropImage( "out/deskewed_pdfimage_0000.jpg", "out" )
-        cr.process()
-        u.showImage( "orig", cv2.imread("temp/pdfimage_0000.jpg") )
-        u.showImage( "deskewed", im )
-        u.showImage( "cropped", cr.getImage() )
-        u.evLoop()
 
