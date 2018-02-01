@@ -35,10 +35,12 @@ source form that might have markings to identify it as being this form.
 
 [1] This is used to find the top-left corner of the form (hopefully) which can be used to map the incoming
 offset rectangles to the coordinate space of the image being worked on.
+
 [2] These are, technically, an "extent" (YAML Marker '!Extent' or in the form of the regular expression: 
 ``/\d+\s+[\+\-]\d+/`` - which define the "start" and "length" but is not a vector or even a line segment 
 because there is no "direction" or even a defined orientation - it is a scale-less value pair only given
 meaning by how it is utilized.
+
 [3] '!Offset' is defined as a pair of extents[2] that define the top-left corner of a rectangle and how
 far its sides expand along the X and Y axes of the coordinate-space
 
