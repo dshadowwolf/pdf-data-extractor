@@ -22,6 +22,7 @@ offsets:
 - !Offset { X: 10 +10, Y: 20 +20 }
 - !Offset { X: 0 +95,  Y: 100 +10 }
 - !Offset { X: 0 +0, Y: 15 +35 }```
+```
 
 '!Identifier' marks this as a file containing a definition of where to locate identifying marks in an
 image of a form.
