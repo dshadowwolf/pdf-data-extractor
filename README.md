@@ -9,8 +9,8 @@ library routines - one of utilities, one for cropping the image and one for
 deskewing the image.
 
 TODO:
-A) Write test-suite to match known-good results to the output of code being produced and/or worked on
-B) Write properly modular code for all existing image and data manipulation functions
+* Write test-suite to match known-good results to the output of code being produced and/or worked on
+* Write properly modular code for all existing image and data manipulation functions
 
 Current YAML format of a file defining a form and how to find its identifying characteristics:
 ```yaml
