@@ -1,9 +1,15 @@
 #!/bin/env python
-import numpy as np
-import cv2
+
+# utility stuff not directly tied to anything, really
 import math
 import glob
 import os
+import re
+
+# non-utility stuff used for semi-important things
+import yaml
+import numpy as np
+import cv2
 
 class utils:
         def __init__(self):
@@ -154,6 +160,91 @@ class Deskew:
                         im = self.doSingle(file_)
                         self.writeOutput(im)
 
+class FormIdentifierOffset(yaml.YAMLObject):
+        yaml_tag = u'!Offset'
+        def __init__(self, xcorner, ycorner):
+                self.X = xcorner
+                self.Y = ycorner
+        def __repr__(self):
+                return "%s, %s" % ( self.X, self.Y )
+        def getMinCoord(self):
+                return (self.X.getMin(), self.Y.getMin())
+        def getMaxCoord(self):
+                return (self.X.getMax(), self.Y.getMax())
+
+class FormIdentifierExtent(yaml.YAMLObject):
+        yaml_tag = u'!Extent'
+        def __init__(self, start, extent):
+                self.start = start
+                self.extent = extent
+        def __repr__(self):
+                return "%d %+d" % (self.start, self.extent)
+        def getMax(self):
+                return self.start+self.extent
+        def getMin(self):
+                return self.start
+        
+class FormIdentifierAnchor(yaml.YAMLObject):
+        yaml_tag = u'!Anchor'
+        def __init__( self, a, b ):
+                self.Left = a
+                self.Top = b
+        def __repr__(self):
+                return "%s, %s" % ( self.Left, self.Top )
+
+class FormIdentifierData(yaml.YAMLObject):
+        yaml_tag = u'!Identifier'
+        def __init__(self, name, offsets, anchor, coordRange):
+                self.name = name
+                self.offsets = offsets
+                self.anchor = anchor
+                self.coordRange = coordRange
+        def __repr__(self):
+                return "%s(name=%s, offsets=%s)" % (
+                        self.__class__.__name__, self.name, self.offsets )
+        def getOffsets(self):
+                if type(self.offsets) is list:
+                        rl = []
+                        for offset in self.offsets:
+                                rl.append( offset.__repr__() )
+                        return rl
+                else:
+                        return [ offset.__repr__() ]
+
+class YAMLSetup(object):
+        @classmethod
+        def extent_repr( cls, dumper, data ):
+                return dumper.represent_scalar(u'!Extent', u'%s' % data )
+        @classmethod
+        def extent_constructor( cls, loader, node ):
+                val = loader.construct_scalar(node)
+                split_regex = re.compile( r'\s+' )
+                s, e = map( int, split_regex.split(val) )
+                return FormIdentifierExtent(s,e)
+        @classmethod
+        def anchor_repr(cls, dumper, data):
+                return dumper.represent_scalar(u'!Anchor', u'%s' % data )
+        @classmethod
+        def anchor_constructor( cls, loader, node ):
+                val = loader.construct_scalar(node)
+                x, y = val.split('!')
+                return FormIdentifierAnchor(x,y)
+        @classmethod
+        def setup(cls):
+                yaml.add_representer(FormIdentifierExtent, cls.extent_repr)
+                yaml.add_constructor(u'!Extent', cls.extent_constructor)
+                ex_rex = re.compile(r'^\d+\s+[\+\-]\d+$')
+                yaml.add_implicit_resolver(u'!Extent', ex_rex)
+                
 if __name__ == "__main__":
         print "I do nothing right now standalone"
-
+# YAML input format:
+# !Identifier
+# name: Test
+# anchor: !Anchor { Left: 150 +2500,  Top: 2300 -2150 }
+# coordRange: !Offset { X: 150 +2500, Y: 2300 -2150 }
+# offsets:
+# - !Offset { X: 10 +10, Y: 20 +20 }
+# - !Offset { X: 0 +95,  Y: 100 +10 }
+# - !Offset { X: 0 +0, Y: 15 +35 }
+        
