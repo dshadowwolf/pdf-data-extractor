@@ -10,7 +10,11 @@ def min3( itemA, itemB, itemC ):
     return int( math.floor( min( min( itemA, itemB), itemC ) ) )
 
 def getImageBoundsPoints(image):
-    gray = np.float32(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+    if len( image.shape ) > 2:
+        # has a color depth
+        gray = np.float32(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+    else:
+        gray = image
     dst = cv2.dilate( cv2.cornerHarris(gray,2,3,0.04), None )
     y,x = np.nonzero( dst > 0.01*dst.max() )
     corners = [ np.amin(x), np.amin(y), np.amax(x), np.amax(y) ]
@@ -21,7 +25,12 @@ def getImageBoundsLines(image):
     MIN_Y = 1
     MAX_X = 2
     MAX_Y = 3
-    edges = cv2.Canny( cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), 50, 150, apertureSize=3 )
+    if len( image.shape ) > 2:
+        # has a color depth
+        gray = np.float32(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+    else:
+        gray = image
+    edges = cv2.Canny( gray, 50, 150, apertureSize=3 )
     lines, width, prec, nfa = cv2.createLineSegmentDetector(_refine = cv2.LSD_REFINE_ADV ).detect( edges )
     corners = [ image.shape[1], image.shape[0], 0, 0 ]
     a, b, c = lines.shape
