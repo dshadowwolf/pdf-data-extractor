@@ -13,6 +13,7 @@ class Deskew:
             print "Input file %s (%s) does not exist!" % (infile, tin)
         self.inputfile = tin
         self.inputImage = cv2.imread(tin)
+        
 
     def getAngle(self):
         lines = ImageUtils.HoughLinesP( image=self.inputImage, minLineLength=self.inputImage.shape[1]/4 )
