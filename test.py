@@ -14,6 +14,8 @@ class TestDeskewAngle(unittest.TestCase):
     def shortDescription(self):
         return "Make sure we can still detect the angle by which the image is skewed"
 
+    def id(self):
+        return "Test Finding Skew Angle"
     
 class TestDeskewRotate(unittest.TestCase):
     def setUp(self):
@@ -44,6 +46,28 @@ class TestCropDown(unittest.TestCase):
 
     def shortDescription(self):
         return "Test cropping an image to size"
+
+class TestYAMLParse(unittest.TestCase):
+    def setUp(self):
+        self.raw_yaml = """
+        !Identifier
+        name: Test
+        anchor: !Anchor { Left: 150 +2500,  Top: 2300 -2150 }
+        coordRange: !Offset { X: 150 +2500, Y: 2300 -2150 }
+        offsets:
+        - !Offset { X: 10 +10, Y: 20 +20 }
+        - !Offset { X: 0 +95,  Y: 100 +10 }
+        - !Offset { X: 0 +0, Y: 15 +35 }"""
+        self.testFile = "test/base_test.yaml"
+
+    def test_yaml_parse(self):
+        parser = YAMLBits.YAML()
+        data = parser.load(self.testFile)
+        knownGood = parser.load_string(self.raw_yaml)
+        self.assertEqual( parser.dump( data ), parser.dump( knownGood ) )
+
+    def shortDescription(self):
+        return "Test basic YAML parsing functionality"
     
     # def test_imageSize(self):
     #     self.assertLessEqual( self.base_image.shape[0], self.deskewed_image.shape[0] )
@@ -59,4 +83,5 @@ if __name__ == '__main__':
     suite.addTest(TestDeskewAngle('test_getAngle'))
     suite.addTest(TestDeskewRotate('test_rotate'))
     suite.addTest(TestCropDown('test_ImageCrop'))
+    suite.addTest(TestYAMLParse('test_yaml_parse'))
     unittest.TextTestRunner(verbosity=2).run(suite)

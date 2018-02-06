@@ -1,0 +1,9 @@
+!Identifier
+name: Test
+anchor: !Anchor { Left: 150 +2500,  Top: 2300 -2150 }
+coordRange: !Offset { X: 150 +2500, Y: 2300 -2150 }
+offsets:
+  - !Offset { X: 10 +10, Y: 20 +20 }
+  - !Offset { X: 0 +95,  Y: 100 +10 }
+  - !Offset { X: 0 +0, Y: 15 +35 }
+  
