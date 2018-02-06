@@ -2,6 +2,7 @@
 
 import yaml
 import os
+import re
 
 class FormIdentifierOffset(yaml.YAMLObject):
         yaml_tag = u'!Offset'
@@ -78,10 +79,9 @@ class YAMLSetup(object):
                 yaml.add_constructor(u'!Extent', cls.extent_constructor)
                 ex_rex = re.compile(r'^\d+\s+[\+\-]\d+$')
                 yaml.add_implicit_resolver(u'!Extent', ex_rex)
+                
 class YAML:
     def __init__(self):
-        self.__loader = yaml.SafeLoader
-        self.__dumper = yaml.SafeDumper
         YAMLSetup().setup()
 
     def load(self, filename):
@@ -91,7 +91,7 @@ class YAML:
         if os.path.exists(fn) is True:
             with open( fn, 'r' ) as stream:
                 try:
-                    rd = yaml.load( stream, self.__loader )
+                    rd = yaml.load( stream )
                     return rd
                 except yaml.YAMLError as exc:
                     print "Error loading %s (%s): %s" % (filename, fn, exc)
@@ -102,7 +102,7 @@ class YAML:
 
     def load_string(self, data):
         try:
-            rd = yaml.load( data, self.__loader )
+            rd = yaml.load( data )
         except yaml.YAMLError as exc:
             print "Error parsing input stream: %s" % exc
             rd = None
