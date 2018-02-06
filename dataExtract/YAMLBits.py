@@ -94,8 +94,16 @@ class YAML:
                     rd = yaml.load( stream )
                     return rd
                 except yaml.YAMLError as exc:
-                    print "Error loading %s (%s): %s" % (filename, fn, exc)
-                    return None
+                        if hasattr(exc, 'problem_mark'):
+                                extra = "Error at position %s:%s" % (exc.problem_mark.line+1,
+                                                                     exc.problem_mark.column+1)
+                        else:
+                                extra = None
+                        msg = "Error loading %s (%s): %s" % (filename, fn, exc)
+                        if extra is not None:
+                                msg += "\n%s" % extra
+                        print msg
+                        return None
         else:
             print "File %s (%s) does not exist!" % (filename, fn)
             return None
@@ -104,7 +112,16 @@ class YAML:
         try:
             rd = yaml.load( data )
         except yaml.YAMLError as exc:
-            print "Error parsing input stream: %s" % exc
-            rd = None
+                if hasattr(exc, 'problem_mark'):
+                        extra = "Error at position %s:%s" % (exc.problem_mark.line+1,
+                                                             exc.problem_mark.column+1)
+                else:
+                        extra = None
+                        msg = "Error parsing input stream: %s" % exc
+                        if extra is not None:
+                                msg += "\n%s" % extra
+                        print msg
+                        return None
+                rd = None
         return rd
     
