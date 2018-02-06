@@ -45,3 +45,11 @@ def getImageBoundsLines(image):
 def cropImage(image, corners):
     return image[corners[1]:corners[3], corners[0]:corners[2]]
 
+
+def HoughLinesP(image, lines=np.array([]), rho=0.02, theta=np.pi/360, threshold=1, minLineLength=100, maxLineGap=10):
+    if len( image.shape ) < 3:
+        edges = image
+    else:
+        edges = cv2.Canny( cv2.cvtColor( image, cv2.COLOR_BGR2GRAY ), 50, 150, apertureSize=3 )
+    return cv2.HoughLinesP( image=edges, rho=rho, theta=theta, threshold=threshold, lines=lines,
+                            minLineLength=minLineLength, maxLineGap=maxLineGap )
