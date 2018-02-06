@@ -82,35 +82,35 @@ class YAMLSetup(object):
                 
 class YAML:
     def __init__(self):
-        YAMLSetup().setup()
+            YAMLSetup().setup()
 
     def load(self, filename):
-        fn = os.path.expanduser(filename)
-        fn = os.path.expandvars(fn)
-        fn = os.path.abspath(fn)
-        if os.path.exists(fn) is True:
-            with open( fn, 'r' ) as stream:
-                try:
-                    rd = yaml.load( stream )
-                    return rd
-                except yaml.YAMLError as exc:
+            fn = os.path.expanduser(filename)
+            fn = os.path.expandvars(fn)
+            fn = os.path.abspath(fn)
+            if os.path.exists(fn) is True:
+                with open( fn, 'r' ) as stream:
+                    try:
+                        rd = yaml.load( stream )
+                        return rd
+                    except yaml.YAMLError as exc:
                         if hasattr(exc, 'problem_mark'):
                                 extra = "Error at position %s:%s" % (exc.problem_mark.line+1,
                                                                      exc.problem_mark.column+1)
                         else:
                                 extra = None
-                        msg = "Error loading %s (%s): %s" % (filename, fn, exc)
+                                msg = "Error loading %s (%s): %s" % (filename, fn, exc)
                         if extra is not None:
                                 msg += "\n%s" % extra
-                        print msg
+                                print msg
                         return None
-        else:
-            print "File %s (%s) does not exist!" % (filename, fn)
+            else:
+                print "File %s (%s) does not exist!" % (filename, fn)
             return None
 
     def load_string(self, data):
         try:
-            rd = yaml.load( data )
+                rd = yaml.load( data )
         except yaml.YAMLError as exc:
                 if hasattr(exc, 'problem_mark'):
                         extra = "Error at position %s:%s" % (exc.problem_mark.line+1,
@@ -120,8 +120,10 @@ class YAML:
                         msg = "Error parsing input stream: %s" % exc
                         if extra is not None:
                                 msg += "\n%s" % extra
-                        print msg
+                                print msg
                         return None
                 rd = None
         return rd
-    
+
+    def dump(self, data):
+            return yaml.dump( data )
