@@ -16,15 +16,16 @@ class Deskew:
         
 
     def getAngle(self):
-        lines = ImageUtils.HoughLinesP( image=self.inputImage, minLineLength=self.inputImage.shape[1]/4 )
+        lines = ImageUtils.HoughLinesP( image=self.inputImage, minLineLength=self.inputImage.shape[0]/2 )
         angle = 0.0;
         if lines is None:
             print "Bad data? HoughLinesP returned data is empty!"
             return None
         numLines = lines.shape[0]
         for i in xrange(numLines):
-            angle += math.atan2( lines[i][0][3] - lines[i][0][1],
-                                 lines[i][0][2] - lines[i][0][0] )
+            for x1,y1,x2,y2 in lines[i]:
+                angle += math.atan2( y2 - y1,
+                                     x2 - x1 )
         angle /= numLines
         return (angle *180)/np.pi
         

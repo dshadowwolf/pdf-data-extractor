@@ -46,7 +46,7 @@ def cropImage(image, corners):
     return image[corners[1]:corners[3], corners[0]:corners[2]]
 
 
-def HoughLinesP(image, lines=np.array([]), rho=0.02, theta=np.pi/360, threshold=1, minLineLength=100, maxLineGap=10):
+def HoughLinesP(image, lines=np.array([]), rho=0.5, theta=np.pi/360, threshold=160, minLineLength=400, maxLineGap=40):
     if len( image.shape ) < 3:
         edges = image
     else:
